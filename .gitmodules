@@ -1,6 +1,8 @@
 [submodule "tmk_core_custom"]
 	path = tmk_core_custom
 	url = https://github.com/jangson/tmk_core_custom.git
+    branch = gh60-satan-wireless
 [submodule "RF24"]
 	path = RF24
 	url = https://github.com/jangson/RF24.git
+    branch = gh60-satan-wireless
