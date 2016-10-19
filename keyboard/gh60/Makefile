@@ -54,6 +54,8 @@ SRC =	keymap_common.c \
 	backlight.c \
 	ledmap.c
 
+KEYMAP := hhkb
+
 ifdef KEYMAP
     SRC := keymap_$(KEYMAP).c $(SRC)
 else
@@ -79,7 +81,7 @@ MCU = atmega32u4
 #     does not *change* the processor frequency - it should merely be updated to
 #     reflect the processor speed set externally so that the code can use accurate
 #     software delays.
-F_CPU = 16000000
+F_CPU = 8000000
 
 
 #
@@ -99,7 +101,7 @@ ARCH = AVR8
 #
 #     If no clock division is performed on the input clock inside the AVR (via the
 #     CPU clock adjust registers or the clock division fuses), this will be equal to F_CPU.
-F_USB = $(F_CPU)
+F_USB = 16000000
 
 # Interrupt driven control endpoint task(+60)
 OPT_DEFS += -DINTERRUPT_CONTROL_ENDPOINT
@@ -112,7 +114,8 @@ OPT_DEFS += -DINTERRUPT_CONTROL_ENDPOINT
 #   LUFA bootloader  4096
 #   USBaspLoader     2048
 OPT_DEFS += -DBOOTLOADER_SIZE=4096
-
+OPT_DEFS += -DGH60_REV_CHN -DGH60_REV_CHN_MOD1
+# OPT_DEFS += -DDEBUG_SW_UART // for debugging with SW UART
 # PCB Revision
 ifdef REV
     OPT_DEFS += -DGH60_REV_$(REV)
@@ -127,23 +130,24 @@ endif
 #   comment out to disable the options.
 #
 BOOTMAGIC_ENABLE = yes	# Virtual DIP switch configuration(+1000)
-MOUSEKEY_ENABLE = yes	# Mouse keys(+4700)
+# MOUSEKEY_ENABLE = yes	# Mouse keys(+4700)
 EXTRAKEY_ENABLE = yes	# Audio control and System control(+450)
 CONSOLE_ENABLE = yes	# Console for debug(+400)
 COMMAND_ENABLE = yes	# Commands for debug and configuration
 #SLEEP_LED_ENABLE = yes	# Breathing sleep LED during USB suspend
-NKRO_ENABLE = yes	# USB Nkey Rollover
+# NKRO_ENABLE = yes	# USB Nkey Rollover
 USB_6KRO_ENABLE = yes	# USB 6key Rollover
 #PS2_MOUSE_ENABLE = yes	# PS/2 mouse(TrackPoint) support
 #PS2_USE_BUSYWAIT = yes
-BACKLIGHT_ENABLE = yes	# Enable keyboard backlight functionality
+# BACKLIGHT_ENABLE = yes	# Enable keyboard backlight functionality
 KEYMAP_IN_EEPROM_ENABLE = yes # Read keymap from eeprom
 #KEYMAP_SECTION_ENABLE = yes	# Fixed address keymap for keymap editor
-SOFTPWM_LED_ENABLE = yes # Enable SoftPWM to drive backlight
-FADING_LED_ENABLE = yes # Enable fading backlight
-BREATHING_LED_ENABLE = yes # Enable breathing backlight
+# SOFTPWM_LED_ENABLE = yes # Enable SoftPWM to drive backlight
+# FADING_LED_ENABLE = yes # Enable fading backlight
+# BREATHING_LED_ENABLE = yes # Enable breathing backlight
 LEDMAP_ENABLE = yes		# Enable LED mapping
 LEDMAP_IN_EEPROM_ENABLE = yes # Read LED mapping from eeprom
+NRF24L01_TMK = yes		# Wireless transmission
 
 
 # Optimize size but this may cause error "relocation truncated to fit"
@@ -153,6 +157,10 @@ LEDMAP_IN_EEPROM_ENABLE = yes # Read LED mapping from eeprom
 VPATH += $(TARGET_DIR)
 VPATH += $(TMK_DIR)
 
+ifdef NRF24L01_TMK
+    OPT_DEFS += -DNRF24L01_TMK
+	include $(TMK_DIR)/../RF24/RF24.mk
+endif
 include $(TMK_DIR)/protocol/lufa.mk
 include $(TMK_DIR)/common.mk
 include $(TMK_DIR)/rules.mk

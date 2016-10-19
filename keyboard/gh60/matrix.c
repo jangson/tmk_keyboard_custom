@@ -72,6 +72,11 @@ void matrix_init(void)
     MCUCR = (1<<JTD);
     MCUCR = (1<<JTD);
 
+#if defined(GH60_REV_CHN_MOD1)
+    DDRF |= (1<<PF7);
+    PORTF |= (1<<PF7);
+#endif
+
 #ifdef PS2_MOUSE_ENABLE
     // ps2 mouse detect
     DDRF &= ~(1<<PF5 | 1<<PF4);
@@ -98,32 +103,35 @@ void matrix_init(void)
 
 uint8_t matrix_scan(void)
 {
-    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
-        select_row(i);
+    // Do loop
+    do {
+        for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
+            select_row(i);
 #ifdef HYBRID_MATRIX
-        init_cols();
+            init_cols();
 #endif
-        _delay_us(30);  // without this wait read unstable value.
-        matrix_row_t cols = read_cols();
-        if (matrix_debouncing[i] != cols) {
-            matrix_debouncing[i] = cols;
-            if (debouncing) {
-                debug("bounce!: "); debug_hex(debouncing); debug("\n");
+            _delay_us(30);  // without this wait read unstable value.
+            matrix_row_t cols = read_cols();
+            if (matrix_debouncing[i] != cols) {
+                matrix_debouncing[i] = cols;
+                if (debouncing) {
+                    debug("bounce!: "); debug_hex(debouncing); debug("\n");
+                }
+                debouncing = DEBOUNCE;
             }
-            debouncing = DEBOUNCE;
+            unselect_rows();
         }
-        unselect_rows();
-    }
 
-    if (debouncing) {
-        if (--debouncing) {
-            _delay_ms(1);
-        } else {
-            for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
-                matrix[i] = matrix_debouncing[i];
+        if (debouncing) {
+            if (--debouncing) {
+                _delay_ms(1);
+            } else {
+                for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
+                    matrix[i] = matrix_debouncing[i];
+                }
             }
         }
-    }
+    } while(debouncing);
 
     return 1;
 }
@@ -169,16 +177,24 @@ uint8_t matrix_key_count(void)
  * pin: F1  F0  E6  D7  D6  D4  C7  C6  B6  B5  B4  B3  B1  B0  (Rev.A)
  * pin: F1  F0  E6  D7  D6  D4  C7  C6  B7  B6  B5  B4  B3  B1  (Rev.B)
  * pin: F1  F0  E6  D7  D6  D4  C7  C6  B7  B5  B4  B3  B1  B0  (Rev.CHN/CNY)
+ * pin: F1  F0  D5  D7  D6  D4  C7  C6  B7  B5  B4  B3  B1  B0  (Rev.CHN-MOD1)
  */
 static void  init_cols(void)
 {
     // Input with pull-up(DDR:0, PORT:1)
     DDRF  &= ~(1<<PF1 | 1<<PF0);
     PORTF |=  (1<<PF1 | 1<<PF0);
+#if !defined(GH60_REV_CHN_MOD1)
     DDRE  &= ~(1<<PE6);
-    PORTE |=  (1<<PE6);
+    PORTE |=  (1<<PE6);    
+#endif
+#if defined(GH60_REV_CHN_MOD1)
+    DDRD  &= ~(1<<PD7 | 1<<PD6 | 1<<PD5 | 1<<PD4);
+    PORTD |=  (1<<PD7 | 1<<PD6 | 1<<PD5 | 1<<PD4); 
+#else
     DDRD  &= ~(1<<PD7 | 1<<PD6 | 1<<PD4);
     PORTD |=  (1<<PD7 | 1<<PD6 | 1<<PD4);
+#endif
     DDRC  &= ~(1<<PC7 | 1<<PC6);
     PORTC |=  (1<<PC7 | 1<<PC6);
 #if defined(GH60_REV_CHN) || defined(GH60_REV_CNY)
@@ -199,10 +215,25 @@ static void  init_cols(void)
  */
 static matrix_row_t read_cols(void)
 {
-#if defined(GH60_REV_CHN)
+#if defined(GH60_REV_CHN_MOD1)
     return (PINF&(1<<PF0) ? 0 : (1<<0)) |
            (PINF&(1<<PF1) ? 0 : (1<<1)) |
-           (PINE&(1<<PE6) ? 0 : (1<<2)) |
+           (PIND&(1<<PD5) ? 0 : (1<<2)) |
+           (PINC&(1<<PC7) ? 0 : (1<<3)) |
+           (PINC&(1<<PC6) ? 0 : (1<<4)) |
+           (PINB&(1<<PB7) ? 0 : (1<<5)) |
+           (PIND&(1<<PD4) ? 0 : (1<<6)) |
+           (PINB&(1<<PB1) ? 0 : (1<<7)) |
+           (PINB&(1<<PB0) ? 0 : (1<<8)) |
+           (PINB&(1<<PB5) ? 0 : (1<<9)) |
+           (PINB&(1<<PB4) ? 0 : (1<<10)) |
+           (PIND&(1<<PD7) ? 0 : (1<<11)) |
+           (PIND&(1<<PD6) ? 0 : (1<<12)) |
+           (PINB&(1<<PB3) ? 0 : (1<<13));
+#elif defined(GH60_REV_CHN)
+    return (PINF&(1<<PF0) ? 0 : (1<<0)) |
+           (PINF&(1<<PF1) ? 0 : (1<<1)) |
+           (PIND&(1<<PE6) ? 0 : (1<<2)) | 
            (PINC&(1<<PC7) ? 0 : (1<<3)) |
            (PINC&(1<<PC6) ? 0 : (1<<4)) |
            (PINB&(1<<PB7) ? 0 : (1<<5)) |
@@ -253,9 +284,17 @@ static matrix_row_t read_cols(void)
  */
 static void unselect_rows(void)
 {
+#if defined(GH60_REV_CHN_MOD1)
+    // Hi-Z(DDR:0, PORT:0) to unselect
+    DDRD  &= ~0b00001111;
+    PORTD &= ~0b00001111;
+    DDRE  &= ~(1<<PE6);
+    PORTE &= ~(1<<PE6);    
+#else
     // Hi-Z(DDR:0, PORT:0) to unselect
     DDRD  &= ~0b00101111;
     PORTD &= ~0b00101111;
+#endif
 }
 
 static void select_row(uint8_t row)
@@ -279,8 +318,57 @@ static void select_row(uint8_t row)
             PORTD &= ~(1<<3);
             break;
         case 4:
+#if defined(GH60_REV_CHN_MOD1)
+            DDRE  |= (1<<PE6);
+            PORTE &= ~(1<<PE6);    
+#else
             DDRD  |= (1<<5);
             PORTD &= ~(1<<5);
+#endif
             break;
     }
 }
+
+#if defined(GH60_REV_CHN_MOD1)
+void matrix_sleep(void)
+{
+    // Pull down all rows
+    DDRF |= (1<<PF7);
+    PORTF &= ~(1<<PF7);
+
+    // Set rows to input float (DDR:0, PORT:0)
+    DDRD  &= ~0b00001111;
+    PORTD &= 0b00101111;
+    DDRE  &= ~(1<<PE6);
+    PORTE &= (1<<PE6);    
+
+    // Set cols to output high (DDR:1, PORT:1)
+    DDRF  |= (1<<PF1 | 1<<PF0);
+    PORTF |= (1<<PF1 | 1<<PF0);
+    DDRD  |= (1<<PD7 | 1<<PD6 | 1<<PD5 | 1<<PD4);
+    PORTD |= (1<<PD7 | 1<<PD6 | 1<<PD5 | 1<<PD4);
+    DDRC  |= (1<<PC7 | 1<<PC6);
+    PORTC |=  (1<<PC7 | 1<<PC6);
+    DDRB  |= (1<<PB7 | 1<<PB5 | 1<<PB4 | 1<<PB3 | 1<<PB1 | 1<<PB0);
+    PORTB |= (1<<PB7 | 1<<PB5 | 1<<PB4 | 1<<PB3 | 1<<PB1 | 1<<PB0);
+
+    // Enable wakeup interrupts INT0~3, INT6
+    EICRA |= 0xff;
+    EICRB |= 0x3 << 4;
+    EIFR  |= 0x0f;
+    EIMSK |= 0x4f;
+}
+
+void matrix_wakeup(void)
+{
+    // Disable wakeup interrupts INT0~3, INT6
+    EIMSK &= ~0x4f;
+
+    // Pull disable all rows
+    DDRF |= (1<<PF7);
+    PORTF |= (1<<PF7);
+
+    init_cols();
+    unselect_rows();
+}
+#endif

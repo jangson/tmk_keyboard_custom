@@ -134,17 +134,21 @@ void backlight_set(uint8_t level)
             break;
         case 7:
             backlight_enable();
+#ifdef SOFTPWM_LED_ENABLE
             fading_led_enable_all();
             breathing_led_disable_all();
             fading_led_set_direction_all(FADING_LED_FADE_IN);
             fading_led_set_duration(3);
+#endif
             break;
         case 8:
             backlight_enable();
+#ifdef SOFTPWM_LED_ENABLE
             fading_led_enable_all();
             breathing_led_disable_all();
             fading_led_set_direction_all(FADING_LED_FADE_OUT);
             fading_led_set_duration(3);
+#endif
             break;
         case 0:
         default:

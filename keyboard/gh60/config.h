@@ -56,7 +56,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* LED mapping */
 #ifdef LEDMAP_ENABLE
-#if defined(GH60_REV_CHN)
+#if defined(GH60_REV_CHN_MOD1)
+#define LED_COUNT 1
+#elif defined(GH60_REV_CHN)
 #define LED_COUNT 2
 #else
 #define LED_COUNT 5

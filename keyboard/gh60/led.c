@@ -23,6 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef LEDMAP_ENABLE
 void led_set(uint8_t usb_led)
 {
+#if defined(GH60_REV_CHN_MOD1)
+    if (usb_led & (1<<USB_LED_CAPS_LOCK)) {
+        // output low
+        DDRB |= (1<<6);
+        PORTB &= ~(1<<6);
+    } else {
+        // output high
+        DDRB |= (1<<6);
+        PORTB |= (1<<6);
+    }
+#else
     if (usb_led & (1<<USB_LED_CAPS_LOCK)) {
         // output low
         DDRB |= (1<<2);
@@ -32,5 +43,6 @@ void led_set(uint8_t usb_led)
         DDRB &= ~(1<<2);
         PORTB &= ~(1<<2);
     }
+#endif
 }
 #endif

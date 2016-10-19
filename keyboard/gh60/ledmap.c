@@ -6,7 +6,9 @@
 #ifdef LEDMAP_ENABLE
 
 static const uint16_t ledmaps[LED_COUNT] PROGMEM = {
-#if defined(GH60_REV_CHN)
+#if defined(GH60_REV_CHN_MOD1)
+    [0] = LEDMAP_CAPS_LOCK | LEDMAP_BACKLIGHT,  // CapsLock - PB6
+#elif defined(GH60_REV_CHN)
     [0] = LEDMAP_CAPS_LOCK | LEDMAP_BACKLIGHT,  // CapsLock - PB2
     [1] = LEDMAP_BACKLIGHT,                     // PWM      - PB6
 #else
@@ -25,6 +27,10 @@ ledmap_t ledmap_get_code(uint8_t index)
 
 void ledmap_led_init(void)
 {
+#if defined(GH60_REV_CHN_MOD1)
+    DDRB  |= (1<<PB6);
+    PORTB |= (1<<PB6);
+#else
     DDRB |= (1<<PB2);
     PORTB |= (1<<PB2);
 #if defined(GH60_REV_CHN)
@@ -34,11 +40,18 @@ void ledmap_led_init(void)
     DDRF  |= (1<<PF7 | 1<<PF6 | 1<<PF5 | 1<<PF4);
     PORTF |= (1<<PF7 | 1<<PF6 | 1<<PF5 | 1<<PF4);
 #endif
+#endif
 }
 
 void ledmap_led_on(uint8_t index)
 {
-#if defined(GH60_REV_CHN)
+#if defined(GH60_REV_CHN_MOD1)
+    switch (index) {
+        case 0:
+            PORTB &= ~(1<<PB6);
+            break;
+    }
+#elif defined(GH60_REV_CHN)
     switch (index) {
         case 0:
             PORTB &= ~(1<<PB2);
@@ -70,7 +83,13 @@ void ledmap_led_on(uint8_t index)
 
 void ledmap_led_off(uint8_t index)
 {
-#if defined(GH60_REV_CHN)
+#if defined(GH60_REV_CHN_MOD1)
+    switch (index) {
+        case 0:
+            PORTB |= (1<<PB6);
+            break;
+    }
+#elif defined(GH60_REV_CHN)
     switch (index) {
         case 0:
             PORTB |= (1<<PB2);
