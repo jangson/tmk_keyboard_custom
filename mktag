@@ -1,0 +1,68 @@
+#!/bin/bash
+
+
+Find_include()
+{
+    find /usr/lib/avr/include -type f -exec readlink -f {} \; >> cscope.files
+}
+
+Find_source()
+{
+    echo -n "find ... "
+    find $PWD ! \( \
+        -iname "cscope.*" -prune \
+        -o -iname "ctags" -prune \
+        -o -iname "*.svn" -prune \
+        -o -iname "*.git" -prune \
+        -o -iname "*.repo" -prune \
+        -o -path "*/tmk_core" -prune \
+         \) \
+        -type f \
+        -name "*.[chxsS]"  \
+        -o -iname "*.cpp"  \
+        -o -iname "*.hpp"  \
+        > cscope.files
+    Find_include
+    echo "done"
+}
+
+Create_cscope()
+{
+    echo -n "cscope ... "
+    cscope -b
+    echo "done"
+}
+
+Create_tags()
+{
+    echo -n "ctags ... "
+    ctags --c++-kinds=+p --fields=+iaS --extra=+q -L cscope.files 
+    echo "done"
+}
+
+
+if [ -z $1 ]; then
+    START=`date +%s`
+    Find_source
+    Create_cscope
+    # Create_tags
+    END=`date +%s`
+    let "Time=$END-$START"
+    echo "elapsed time : $Time seconds"
+
+elif [ "$1" = "update" ]; then
+    START=`date +%s`
+    # Create_cscope
+    # Create_tags
+    END=`date +%s`
+    let "Time=$END-$START"
+    echo "elapsed time : $Time seconds"
+
+elif [ "$1" = "clean" ]; then
+    echo "Clean tags"
+    rm -vf cscope.* tags
+
+else
+	echo "No operation"
+fi
+
