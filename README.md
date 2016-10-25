@@ -38,6 +38,7 @@ Build
  * git submodule update
  * cd keyboard/gh60
  * make
+ * Refer USB receiver part to to https://github.com/jangson/crazyradio-firmware.git
 
 Updates
 -------
